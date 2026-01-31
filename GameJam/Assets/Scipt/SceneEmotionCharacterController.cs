@@ -1,21 +1,29 @@
+﻿using static EmotionMeter;
 using UnityEngine;
-using static EmotionMeter;
 
 public class SceneEmotionCharacterController : MonoBehaviour
 {
     public EmotionMeter emotionMeter;
 
-    [Header("Characters")]
     public CharacterEmotionVisual leftCharacter;
     public CharacterEmotionVisual rightCharacter;
 
-    public void BounceBoth()
+    void Start()
     {
-        if (leftCharacter != null)
-            leftCharacter.Bounce();
-
-        if (rightCharacter != null)
-            rightCharacter.Bounce();
+        emotionMeter.OnEmotionStateChanged += OnEmotionChanged;
     }
 
+    void OnEmotionChanged(EmotionState state)
+    {
+        // ⭐ เปลี่ยน sprite เท่านั้น
+        leftCharacter.SetEmotionState(state);
+        rightCharacter.SetEmotionState(state);
+    }
+
+    // ⭐ เด้งจาก input
+    //public void BounceBoth()
+    //{
+    //    leftCharacter.Bounce();
+    //    rightCharacter.Bounce();
+    //}
 }

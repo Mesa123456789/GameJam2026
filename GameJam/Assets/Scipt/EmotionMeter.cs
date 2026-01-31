@@ -224,7 +224,7 @@ public class EmotionMeter : MonoBehaviour
         EmotionState newState = GetEmotionState(value);
 
         if (newState == currentState)
-            return; // ⭐ ไม่เปลี่ยน ไม่กระพริบ
+            return; 
 
         currentState = newState;
 

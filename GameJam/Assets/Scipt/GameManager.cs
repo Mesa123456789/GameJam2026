@@ -103,6 +103,7 @@ public class GameManager : MonoBehaviour
         rhythm.UpdateRhythm(timeProgress);
     }
 
+
     void HandleInput()
     {
         if (Input.GetKeyDown(inputKey))
@@ -120,8 +121,6 @@ public class GameManager : MonoBehaviour
             rhythm.ApplyDifficultyStep(timeProgress);
         }
     }
-
-
     void EndGame()
     {
         if (isGameOver) return;

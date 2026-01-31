@@ -34,7 +34,7 @@ public class CharacterEmotionVisual : MonoBehaviour
 
         currentState = newState;
         UpdateSprite(newState);
-        Bounce();
+
     }
 
     void UpdateSprite(EmotionState state)

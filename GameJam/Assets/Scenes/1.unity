@@ -3463,10 +3463,10 @@ MonoBehaviour:
   triangle: {fileID: 1692882273}
   bar: {fileID: 141655794}
   redZone: {fileID: 280298008}
-  baseSpeed: 350
+  baseSpeed: 500
   speedMultiplier: 2
   baseZoneWidth: 120
-  minZoneWidth: 50
+  minZoneWidth: 80
   difficultyCurve:
     serializedVersion: 2
     m_Curve:
