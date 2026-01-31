@@ -33,17 +33,21 @@ public class ScoreManager : MonoBehaviour
 
         return Mathf.RoundToInt(score);
     }
-    public int EvaluateResultIndex()
+    public int EvaluateResultIndex(float emotionValue)
     {
-        float avgEmotion =
-            emotionSamples > 0 ? emotionSum / emotionSamples : 0f;
-
-        if (avgEmotion >= 70f)
-            return 2; // ดี
-        else if (avgEmotion >= 40f)
+        if (emotionValue < 20f)
+        {
+            return 0; // แย่
+        }
+        else if (emotionValue < 60f)
+        {
             return 1; // ปานกลาง
+        }
         else
-            return 0; // ไม่ดี
+        {
+            return 2; // ดี
+        }
     }
+
 
 }

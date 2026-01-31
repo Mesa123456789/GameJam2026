@@ -32,12 +32,22 @@ public class RhythmBarController : MonoBehaviour
     [Header("Red Zone Shake")]
     public float shakeAmount = 15f;
     public float shakeTime = 0.1f;
-
+    [Header("Hit Rotation Shake")]
+    public float hitShakeAngle = 10f;     // ±10 องศา
+    public float hitShakeDuration = 0.12f;
+    [Header("Sound")]
+    public AudioSource rhythmAudio;
+    public AudioClip hitClip;
+    public AudioClip missClip;
     void Start()
     {
         barHalfWidth = bar.rect.width / 2f;
         RelocateRedZone();
+
+        if (rhythmAudio == null)
+            rhythmAudio = GetComponent<AudioSource>();
     }
+
 
 
     void MoveTriangle(float speed)
@@ -60,6 +70,34 @@ public class RhythmBarController : MonoBehaviour
         LeanTween
             .scale(redZone, Vector3.one * (1f + hitPunchScale), hitPunchTime)
             .setEasePunch();
+    }
+    void PlayHitRotationShake()
+    {
+        // ยกเลิก tween เดิมกันซ้อน
+        LeanTween.cancel(redZone.gameObject);
+        LeanTween.cancel(bar.gameObject);
+
+        // รีเซ็ต rotation ก่อน
+        redZone.localRotation = Quaternion.identity;
+        bar.localRotation = Quaternion.identity;
+
+        // 🔴 Red Zone
+        LeanTween.rotateZ(
+            redZone.gameObject,
+            hitShakeAngle,
+            hitShakeDuration / 2f
+        )
+        .setEaseInOutSine()
+        .setLoopPingPong(1);
+
+        // ⚪ BG
+        LeanTween.rotateZ(
+            bar.gameObject,
+            hitShakeAngle,
+            hitShakeDuration / 2f
+        )
+        .setEaseInOutSine()
+        .setLoopPingPong(1);
     }
 
     void ShakeAndRelocateRedZone()
@@ -89,16 +127,26 @@ public class RhythmBarController : MonoBehaviour
 
         bool hit = Mathf.Abs(triX - zoneX) <= halfWidth;
 
-        if (hit)
+        // 🔊 เล่นเสียงทุกครั้งที่กด
+        if (rhythmAudio != null)
         {
-            PlayRedZoneHitFX(); // เด้ง (ถ้ามี)
+            if (hit && hitClip != null)
+                rhythmAudio.PlayOneShot(hitClip);
+            else if (!hit && missClip != null)
+                rhythmAudio.PlayOneShot(missClip);
         }
 
-        // ⭐ สั่นก่อนย้ายตำแหน่ง (ทุกกรณี)
+        if (hit)
+        {
+            PlayRedZoneHitFX();
+            PlayHitRotationShake();
+        }
+
         ShakeAndRelocateRedZone();
 
         return hit;
     }
+
 
     public void UpdateRhythm(float timeProgress01)
     {

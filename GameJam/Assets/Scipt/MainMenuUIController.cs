@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.SceneManagement;
 using TMPro;
 
 public class MainMenuUIController : MonoBehaviour
@@ -8,42 +7,55 @@ public class MainMenuUIController : MonoBehaviour
     public TextMeshProUGUI titleText;
     public TextMeshProUGUI startButtonText;
 
-    [Header("Scene")]
-    public string gameSceneName = "1";
-
+    [Header("Language Dropdown")]
+    public TMP_Dropdown languageDropdown;
+    public GameObject option;
     void Start()
     {
+        SetupDropdown();
+        RefreshLanguage();
+        option.SetActive(false);
+    }
+
+    void SetupDropdown()
+    {
+        // sync dropdown กับภาษาปัจจุบัน
+        languageDropdown.value =
+            LanguageManager.Instance.currentLanguage == GameLanguage.English
+            ? 1
+            : 0;
+
+        languageDropdown.onValueChanged.AddListener(OnLanguageChanged);
+    }
+
+    void OnLanguageChanged(int index)
+    {
+        if (index == 1)
+            LanguageManager.Instance.SetLanguage(GameLanguage.English);
+        else
+            LanguageManager.Instance.SetLanguage(GameLanguage.Thai);
+
         RefreshLanguage();
     }
-
-    public void OnStartGame()
+    public void OpenOption()
     {
-        SceneManager.LoadScene(gameSceneName);
+        option.SetActive(true);
     }
-
-    public void SelectThai()
+    public void back()
     {
-        LanguageManager.Instance.SetLanguage(GameLanguage.Thai);
-        RefreshLanguage();
+        option.SetActive(false);
     }
-
-    public void SelectEnglish()
-    {
-        LanguageManager.Instance.SetLanguage(GameLanguage.English);
-        RefreshLanguage();
-    }
-
     void RefreshLanguage()
     {
         if (LanguageManager.Instance.currentLanguage == GameLanguage.English)
         {
-            titleText.text = "Emotion Control";
-            startButtonText.text = "Start Game";
+            titleText.text = "Emotional Damage";
+            startButtonText.text = "Start";
         }
         else
         {
-            titleText.text = "ควบคุมอารมณ์";
-            startButtonText.text = "เริ่มเกม";
+            titleText.text = "เก็บอาการหน่อยจ้า";
+            startButtonText.text = "ปะ";
         }
     }
 }

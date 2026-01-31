@@ -20,6 +20,19 @@ public class EndGameUIController : MonoBehaviour
     [Header("Next Scene")]
     public string nextSceneName;
     [SerializeField] private GameObject nextButton;
+    [SerializeField] private GameObject retryButton;
+    [Header("End Result Sound")]
+    public AudioSource resultAudioSource;
+    public AudioClip badResultClip;
+    public AudioClip normalResultClip;
+    public AudioClip goodResultClip;
+
+    [Header("UI Popup Sound")]
+    public AudioSource uiAudioSource;
+    public AudioClip popupOpenClip;
+    public AudioClip starPopClip;
+
+
     void Awake()
     {
         sceneResultConfig = FindObjectOfType<SceneResultConfig>();
@@ -28,12 +41,17 @@ public class EndGameUIController : MonoBehaviour
     public void ShowResult(int resultIndex)
     {
         popupRoot.SetActive(true);
+
         Cursor.visible = true;
+
+        // 🔔 popup sound
+        PlayPopupSound();
+
+        // 🏆 result sound
+        PlayEndResultSound(resultIndex);
+
         GameLanguage lang = LanguageManager.Instance.currentLanguage;
-
-        ResultDataSO data =
-            sceneResultConfig.GetResultByLanguage(lang);
-
+        ResultDataSO data = sceneResultConfig.GetResultByLanguage(lang);
         ResultEntry entry = data.results[resultIndex];
 
         titleText.text = entry.resultName;
@@ -47,6 +65,7 @@ public class EndGameUIController : MonoBehaviour
         LeanTween.scale(popupRoot, Vector3.one, popupScaleTime)
                  .setEaseOutBack();
 
+        // ⭐ star + sound
         for (int i = 0; i < entry.starCount; i++)
         {
             int index = i;
@@ -59,24 +78,61 @@ public class EndGameUIController : MonoBehaviour
                         Vector3.one,
                         0.3f
                     ).setEaseOutBack();
+
+                    PlayStarSound();
                 });
         }
 
-        ShowNextButton();
+        ShowButton(nextButton);
+        ShowButton(retryButton);
     }
-    void ShowNextButton()
-    {
-        if (nextButton == null) return;
 
-        nextButton.transform.localScale = Vector3.zero;
-        LeanTween.scale(nextButton, Vector3.one, 0.25f)
+    void ShowButton(GameObject button)
+    {
+        if (button == null) return;
+
+        button.transform.localScale = Vector3.zero;
+        LeanTween.scale(button, Vector3.one, 0.25f)
                  .setEaseOutBack();
     }
-    public void GoToNextScene()
+    void PlayEndResultSound(int resultIndex)
     {
+        if (resultAudioSource == null) return;
 
-        Time.timeScale = 1f; 
-        SceneManager.LoadScene(nextSceneName);
+        AudioClip clip = null;
+
+        switch (resultIndex)
+        {
+            case 0:
+                clip = badResultClip;
+                break;
+            case 1:
+                clip = normalResultClip;
+                break;
+            case 2:
+                clip = goodResultClip;
+                break;
+        }
+
+        if (clip != null)
+        {
+            resultAudioSource.PlayOneShot(clip);
+        }
     }
+    void PlayPopupSound()
+    {
+        if (uiAudioSource != null && popupOpenClip != null)
+        {
+            uiAudioSource.PlayOneShot(popupOpenClip);
+        }
+    }
+    void PlayStarSound()
+    {
+        if (uiAudioSource != null && starPopClip != null)
+        {
+            uiAudioSource.PlayOneShot(starPopClip);
+        }
+    }
+
 
 }
