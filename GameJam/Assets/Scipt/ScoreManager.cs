@@ -2,52 +2,40 @@
 
 public class ScoreManager : MonoBehaviour
 {
-    public float survivedTime;
-    public int correctHits;
+    [Header("Score")]
+    public int TotalScore { get; private set; }
 
-    private float emotionSum;
-    private int emotionSamples;
+    [Header("Emotion Thresholds")]
+    public int midThreshold = 0;     // < 0 = Low
+    public int highThreshold = 60;   // >= 60 = High
 
-    public void RecordEmotion(float emotion)
+    [Header("Reference")]
+    public EmotionMeter emotionMeter;
+
+    public void AddScore(int delta)
     {
-        emotionSum += emotion;
-        emotionSamples++;
-        survivedTime += Time.deltaTime;
+        TotalScore += delta;
+        TotalScore = Mathf.Clamp(TotalScore, 0, 100);
+
+        emotionMeter.SetEmotionValue(TotalScore);
     }
 
-    public void RecordResult(bool hit)
+    public int EvaluateResultIndex()
     {
-        if (hit)
-            correctHits++;
-    }
-
-    public int CalculateFinalScore()
-    {
-        float avgEmotion =
-            emotionSamples > 0 ? emotionSum / emotionSamples : 0f;
-
-        float score =
-            survivedTime * 10f +
-            correctHits * 50f +
-            avgEmotion * 5f;
-
-        return Mathf.RoundToInt(score);
-    }
-    public int EvaluateResultIndex(float emotionValue)
-    {
-        if (emotionValue < 20f)
-        {
-            return 0; // แย่
-        }
-        else if (emotionValue < 60f)
-        {
-            return 1; // ปานกลาง
-        }
+        if (TotalScore < 20)
+            return 0;
+        else if (TotalScore < 60)
+            return 1; 
         else
-        {
-            return 2; // ดี
-        }
+            return 2; 
     }
+    public void ResetScore()
+    {
+        TotalScore = 0;
+        emotionMeter.SetEmotionValue(0, true);
 
+ 
+        emotionMeter.ApplyVisual(0);
+    }
 
 }

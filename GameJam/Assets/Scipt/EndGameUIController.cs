@@ -43,12 +43,14 @@ public class EndGameUIController : MonoBehaviour
         popupRoot.SetActive(true);
 
         Cursor.visible = true;
-
-        // 🔔 popup sound
         PlayPopupSound();
 
-        // 🏆 result sound
-        PlayEndResultSound(resultIndex);
+        // 🔔 เล่นเสียงผลลัพธ์หลัง popup โผล่นิดนึง
+        LeanTween.delayedCall(gameObject, 0.05f, () =>
+        {
+            PlayEndResultSound(resultIndex);
+        });
+
 
         GameLanguage lang = LanguageManager.Instance.currentLanguage;
         ResultDataSO data = sceneResultConfig.GetResultByLanguage(lang);
@@ -103,22 +105,21 @@ public class EndGameUIController : MonoBehaviour
 
         switch (resultIndex)
         {
-            case 0:
-                clip = badResultClip;
-                break;
-            case 1:
-                clip = normalResultClip;
-                break;
-            case 2:
-                clip = goodResultClip;
-                break;
+            case 0: clip = badResultClip; break;
+            case 1: clip = normalResultClip; break;
+            case 2: clip = goodResultClip; break;
         }
 
-        if (clip != null)
-        {
-            resultAudioSource.PlayOneShot(clip);
-        }
+        if (clip == null) return;
+
+        // 🔒 บังคับให้แน่ใจว่า AudioSource เปิดอยู่
+        if (!resultAudioSource.gameObject.activeInHierarchy)
+            return;
+
+        resultAudioSource.Stop(); // กันซ้อน
+        resultAudioSource.PlayOneShot(clip);
     }
+
     void PlayPopupSound()
     {
         if (uiAudioSource != null && popupOpenClip != null)

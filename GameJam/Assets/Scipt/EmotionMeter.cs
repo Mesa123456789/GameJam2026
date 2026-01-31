@@ -5,250 +5,128 @@ public class EmotionMeter : MonoBehaviour
 {
     public enum EmotionState
     {
-        Low,    
-        Mid,   
-        High   
+        Low,
+        Mid,
+        High
     }
 
-    [Header("Emotion State Sound")]
-    public AudioSource emotionAudio;     // AudioSource ของ Emotion
-    public AudioClip highEmotionClip;
-    public AudioClip midEmotionClip;
-    public AudioClip lowEmotionClip;
-
-    public float emotionFadeTime = 0.4f;
-
-    private EmotionState currentState;
-    [Header("Emotion Settings")]
+    public float minEmotion = 0f;
     public float maxEmotion = 100f;
-    public float drainPerSecond = 5f;
-    public float gainOnHit = 10f;
-    public float lossOnMiss = 15f;
-    private bool isFrozen = false;
 
-    [Header("Handle Sprites")]
-    public Image handleImage;
-
-    public Sprite highHandleSprite;   // อารมณ์ดี
-    public Sprite midHandleSprite;    // กลาง
-    public Sprite lowHandleSprite;    // แย่
 
     [Header("UI")]
     public Slider emotionSlider;
+    public Image fillImage;
+    public Image handleImage;
 
-    public float CurrentEmotion { get; private set; }
-    [Header("Tween Settings")]
-    public float upTweenTime = 0.15f;
-    public float downTweenTime = 0.4f;
+    [Header("Handle Sprites")]
+    public Sprite highHandleSprite;
+    public Sprite midHandleSprite;
+    public Sprite lowHandleSprite;
 
     [Header("Emotion Colors")]
     public Color highColor = Color.yellow;
-    public Color midColor = new Color(1f, 0.5f, 0f); 
+    public Color midColor = new Color(1f, 0.5f, 0f);
     public Color lowColor = Color.red;
-    public System.Action OnEmotionEmpty;
+
+    [Header("Tween Settings")]
+    public float tweenTime = 0.25f;
+    [Header("Tween Speed By Round")]
+    public float startTweenTime = 0.35f;   // รอบแรก ช้า
+    public float minTweenTime = 0.1f;      // เร็วสุด
+    public int maxSpeedRound = 20;         // ครบกี่รอบถึงเร็วสุด
+
+    float currentTweenTime;
+
+    public EmotionState CurrentState { get; private set; }
+    public float CurrentValue { get; private set; }
+
     public System.Action<EmotionState> OnEmotionStateChanged;
-
-
-
-    public Image fillImage;
 
     void Start()
     {
-        CurrentEmotion = maxEmotion;
-
-        emotionSlider.minValue = 0;
+        emotionSlider.minValue = minEmotion;
         emotionSlider.maxValue = maxEmotion;
-        emotionSlider.value = CurrentEmotion;
 
-        currentState = GetEmotionState(CurrentEmotion);
-        ApplyVisualByState(currentState);
+        currentTweenTime = startTweenTime;
+
+        SetEmotionValue(0, true);
     }
 
 
-    void AnimateEmotion(float targetValue, bool increase)
+    public void IncreaseSpeedByRound(int currentRound)
     {
-        if (isFrozen) return; 
+        float t = Mathf.Clamp01((float)currentRound / maxSpeedRound);
+        currentTweenTime = Mathf.Lerp(startTweenTime, minTweenTime, t);
+    }
+    public void SetEmotionValue(int value, bool instant = false)
+    {
+        int clamped = Mathf.Clamp(value, 0, 100);
+        CurrentValue = clamped;
 
         LeanTween.cancel(emotionSlider.gameObject);
 
-        float duration = increase ? upTweenTime : downTweenTime;
+        if (instant)
+        {
+            emotionSlider.value = clamped;
+            ApplyVisual(clamped);
+            return;
+        }
 
         LeanTween.value(
             emotionSlider.gameObject,
             emotionSlider.value,
-            targetValue,
-            duration
+            clamped,
+            currentTweenTime
         )
-        .setEase(increase ? LeanTweenType.easeOutBack : LeanTweenType.easeOutCubic)
-.setOnUpdate((float val) =>
-{
-    emotionSlider.value = val;
-    UpdateColor(val);
-    CheckEmotionStateChange(val);
-
-    if (!isFrozen && val <= 0.001f)
-    {
-        emotionSlider.value = 0;
-        OnEmotionEmpty?.Invoke();
-    }
-});
-
-    }
-    void UpdateColor(float value)
-    {
-        if (value < 40f)
-            fillImage.color = lowColor;
-        else if (value < 60f)
-            fillImage.color = midColor;
-        else
-            fillImage.color = highColor;
-    }
-
-
-    void UpdateHandleSprite(float percent)
-    {
-        if (handleImage == null) return;
-
-        if (percent > 0.6f && handleImage.sprite != highHandleSprite)
+        .setOnUpdate((float v) =>
         {
-            handleImage.sprite = highHandleSprite;
-        }
-        else if (percent > 0.3f && handleImage.sprite != midHandleSprite)
+            emotionSlider.value = v;
+            ApplyVisual((int)v);  
+        });
+    }
+
+
+
+    public void ApplyVisual(int realScore)
+    {
+        EmotionState newState = GetStateFromScore(realScore);
+
+        if (newState != CurrentState)
         {
-            handleImage.sprite = midHandleSprite;
+            CurrentState = newState;
+            OnEmotionStateChanged?.Invoke(newState);
         }
-        else if (handleImage.sprite != lowHandleSprite)
-        {
-            handleImage.sprite = lowHandleSprite;
-        }
-    }
-    EmotionState GetEmotionState(float value)
-    {
-        if (value < 40f)
-            return EmotionState.Low;
-        else if (value < 60f)
-            return EmotionState.Mid;
-        else
-            return EmotionState.High;
-    }
 
-
-    void ChangeEmotionState(EmotionState newState)
-    {
-        currentState = newState;
-        PlayEmotionSound(newState, false);
-    }
-
-    void PlayEmotionSound(EmotionState state, bool instant)
-    {
-        if (emotionAudio == null) return;
-
-        AudioClip targetClip = null;
-
-        switch (state)
+        switch (newState)
         {
             case EmotionState.High:
-                targetClip = highEmotionClip;
-                break;
-            case EmotionState.Mid:
-                targetClip = midEmotionClip;
-                break;
-            case EmotionState.Low:
-                targetClip = lowEmotionClip;
-                break;
-        }
-
-        if (targetClip == null) return;
-
-        LeanTween.cancel(emotionAudio.gameObject);
-
-        if (instant)
-        {
-            emotionAudio.clip = targetClip;
-            emotionAudio.volume = 1f;
-            emotionAudio.Play();
-            return;
-        }
-
-        // 🔻 fade out
-        LeanTween.value(emotionAudio.gameObject, emotionAudio.volume, 0f, emotionFadeTime * 0.5f)
-            .setOnUpdate(v => emotionAudio.volume = v)
-            .setOnComplete(() =>
-            {
-                emotionAudio.clip = targetClip;
-                emotionAudio.Play();
-
-                // 🔺 fade in
-                LeanTween.value(emotionAudio.gameObject, 0f, 1f, emotionFadeTime * 0.5f)
-                    .setOnUpdate(v => emotionAudio.volume = v);
-            });
-    }
-
-    public void ApplyResult(bool hit)
-    {
-        if (hit)
-            CurrentEmotion += gainOnHit;
-        else
-            CurrentEmotion -= lossOnMiss;
-
-        CurrentEmotion = Mathf.Clamp(CurrentEmotion, 0, maxEmotion);
-
-        AnimateEmotion(CurrentEmotion, hit);
-    }
-    void Update()
-    {
-        if (isFrozen) return;
-        float newEmotion = CurrentEmotion - drainPerSecond * Time.deltaTime;
-        newEmotion = Mathf.Clamp(newEmotion, 0, maxEmotion);
-
-        if (newEmotion != CurrentEmotion)
-        {
-            CurrentEmotion = newEmotion;
-            AnimateEmotion(CurrentEmotion, false);
-        }
-
-    }
-
-    public float GetCurrentEmotionValue()
-    {
-        return emotionSlider.value;
-    }
-    public void FreezeEmotion()
-    {
-        isFrozen = true;
-
-        LeanTween.cancel(emotionSlider.gameObject);
-    }
-    void CheckEmotionStateChange(float value)
-    {
-        EmotionState newState = GetEmotionState(value);
-
-        if (newState == currentState)
-            return; 
-
-        currentState = newState;
-
-        ApplyVisualByState(newState);
-
-        OnEmotionStateChanged?.Invoke(newState);
-    }
-    void ApplyVisualByState(EmotionState state)
-    {
-        switch (state)
-        {
-            case EmotionState.High:
+                fillImage.color = highColor;
                 handleImage.sprite = highHandleSprite;
                 break;
 
             case EmotionState.Mid:
+                fillImage.color = midColor;
                 handleImage.sprite = midHandleSprite;
                 break;
 
             case EmotionState.Low:
+                fillImage.color = lowColor;
                 handleImage.sprite = lowHandleSprite;
                 break;
         }
     }
+
+    EmotionState GetStateFromScore(int score)
+    {
+        if (score < 20)
+            return EmotionState.Low;   // 😠 โกรธ
+        else if (score < 60)
+            return EmotionState.Mid;   // 😐 กลาง
+        else
+            return EmotionState.High;  // 🙂 ดี
+    }
+
 
 
 }

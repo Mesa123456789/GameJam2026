@@ -7,23 +7,27 @@ public class SceneEmotionCharacterController : MonoBehaviour
 
     public CharacterEmotionVisual leftCharacter;
     public CharacterEmotionVisual rightCharacter;
-
-    void Start()
+    public CharacterEmotionVisual rightCharacter1;
+    void OnEnable()
     {
+        if (emotionMeter == null) return;
+
         emotionMeter.OnEmotionStateChanged += OnEmotionChanged;
+
+        OnEmotionChanged(emotionMeter.CurrentState);
     }
+
+    void OnDisable()
+    {
+        if (emotionMeter != null)
+            emotionMeter.OnEmotionStateChanged -= OnEmotionChanged;
+    }
+
 
     void OnEmotionChanged(EmotionState state)
     {
-        // ⭐ เปลี่ยน sprite เท่านั้น
         leftCharacter.SetEmotionState(state);
         rightCharacter.SetEmotionState(state);
+        rightCharacter1.SetEmotionState(state);
     }
-
-    // ⭐ เด้งจาก input
-    //public void BounceBoth()
-    //{
-    //    leftCharacter.Bounce();
-    //    rightCharacter.Bounce();
-    //}
 }

@@ -1,12 +1,11 @@
 ﻿using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
     [Header("Game Time")]
-    public float gameDuration = 60f;
+    public float gameDuration = 30f;
     public TMP_Text timeText;
 
     [Header("Input")]
@@ -14,18 +13,169 @@ public class GameManager : MonoBehaviour
 
     [Header("References")]
     public RhythmBarController rhythm;
-    public EmotionMeter emotion;
     public ScoreManager score;
     public EndGameUIController endGameUI;
 
-    private float currentTime;
-    private bool isGameOver;
-    public SceneEmotionCharacterController characterController;
+    [Header("Character Bounce")]
     public RectTransform playerCharacter;
     public RectTransform bossCharacter;
-    [Header("Character Bounce")]
-    public float bounceHeight = 30f;   // pixel
+    public float bounceHeight = 30f;
     public float bounceTime = 0.2f;
+    public EmotionMeter emotionMeter;
+
+    private float currentTime;
+    private bool isGameOver;
+    int roundCount;
+
+    [Header("Input Sound")]
+    public AudioSource inputAudio;
+    public AudioClip hitClip;    // เสียงกดดี (Smile)
+    public AudioClip missClip;   // เสียงกดพลาด (Neutral / Angry)
+    public EmotionAudioController emotionAudio;
+
+    void Start()
+    {
+        Cursor.visible = false;
+        //Time.timeScale = 1f;
+
+        // ✅ เก็บ AudioManager
+        AudioManager.Instance.ApplyAll();
+
+        currentTime = gameDuration;
+        UpdateTimeText();
+
+        if (score != null)
+            score.ResetScore();
+    }
+
+    void Update()
+    {
+        if (isGameOver) return;
+
+        UpdateTimer();
+        UpdateDifficultyByTime();
+        HandleInput();
+    }
+
+    // ⏱ เวลาเกม
+    void UpdateTimer()
+    {
+        currentTime -= Time.deltaTime;
+        if (currentTime < 0) currentTime = 0;
+
+        UpdateTimeText();
+
+        if (currentTime <= 0)
+            EndGame();
+    }
+
+    void UpdateTimeText()
+    {
+        if (timeText != null)
+            timeText.text = Mathf.CeilToInt(currentTime).ToString();
+    }
+
+    // 🎚 เร่งความเร็ว indicator ตามเวลา
+    void UpdateDifficultyByTime()
+    {
+        float timeProgress = 1f - (currentTime / gameDuration);
+        rhythm.UpdateSpeedByTime(timeProgress);
+    }
+    void HandleInput()
+    {
+        if (!Input.GetKeyDown(inputKey)) return;
+
+        roundCount++;
+
+        int index = rhythm.GetCurrentIndex();
+        RhythmBarController.EmotionType emotion =
+            rhythm.GetCurrentEmotion();
+        // หลังจากรู้ emotion แล้ว
+        if (emotion == RhythmBarController.EmotionType.Smile)
+        {
+            rhythm.PlayHitFeedback();   // 🟢 กดโดน
+        }
+        else
+        {
+            rhythm.PlayMissFeedback();  // 🔴 กดพลาด
+        }
+
+        int scoreDelta = GetScoreFromEmotion(emotion);
+
+        Debug.Log(
+            $"[INPUT] Slot:{index} | Emotion:{emotion} | Delta:{scoreDelta}"
+        );
+
+        // 🔊 เล่นเสียงตามผลลัพธ์การกด
+        PlayInputSound(emotion);
+
+        score.AddScore(scoreDelta);
+
+        Debug.Log(
+            $"[SCORE] TotalScore = {score.TotalScore}"
+        );
+
+        emotionMeter.IncreaseSpeedByRound(roundCount);
+
+        rhythm.RandomizeSlots();
+
+        BounceCharacter(playerCharacter);
+        BounceCharacter(bossCharacter);
+    }
+
+    void PlayInputSound(RhythmBarController.EmotionType emotion)
+    {
+        if (inputAudio == null) return;
+
+        switch (emotion)
+        {
+            case RhythmBarController.EmotionType.Smile:
+                if (hitClip != null)
+                    inputAudio.PlayOneShot(hitClip);
+                break;
+
+            case RhythmBarController.EmotionType.Neutral:
+            case RhythmBarController.EmotionType.Angry:
+                if (missClip != null)
+                    inputAudio.PlayOneShot(missClip);
+                break;
+        }
+    }
+
+    int GetScoreFromEmotion(RhythmBarController.EmotionType emotion)
+    {
+        switch (emotion)
+        {
+            case RhythmBarController.EmotionType.Smile:
+                return 10;
+            case RhythmBarController.EmotionType.Neutral:
+                return -10;
+            case RhythmBarController.EmotionType.Angry:
+                return -15;
+        }
+        return 0;
+    }
+    void EndGame()
+    {
+        if (isGameOver) return;
+        isGameOver = true;
+
+        rhythm.StopRhythm();
+
+        // 🔇 ปิดเสียง emotion
+        if (emotionAudio != null)
+            emotionAudio.StopEmotionAudio();
+
+        int resultIndex = score.EvaluateResultIndex();
+
+        string sceneName =
+            SceneManager.GetActiveScene().name;
+
+        ProgressManager.Instance
+            .SaveSceneResult(sceneName, resultIndex);
+
+        endGameUI.ShowResult(resultIndex);
+    }
 
     void BounceCharacter(RectTransform target)
     {
@@ -53,123 +203,4 @@ public class GameManager : MonoBehaviour
             .setIgnoreTimeScale(true);
         });
     }
-
-    void Start()
-    {
-
-        Cursor.visible = false;
-        Time.timeScale = 1f;
-        AudioManager.Instance.ApplyAll();
-
-        currentTime = gameDuration;
-        emotion.OnEmotionEmpty += GameOverByEmotion;
-
-        UpdateTimeText();
-    }
-
-    void Update()
-    {
-        if (isGameOver) return;
-
-        UpdateTimer();
-        UpdateDifficultyByTime();
-        HandleInput();
-
-        UpdateMusicByEmotion(); 
-    }
-
-    void UpdateTimer()
-    {
-        currentTime -= Time.deltaTime;
-        if (currentTime < 0) currentTime = 0;
-
-        UpdateTimeText();
-
-        if (currentTime <= 0)
-        {
-            EndGame();
-        }
-    }
-
-    void UpdateTimeText()
-    {
-        if (timeText != null)
-            timeText.text = Mathf.CeilToInt(currentTime).ToString();
-    }
-
-    void UpdateDifficultyByTime()
-    {
-        float timeProgress = 1f - (currentTime / gameDuration);
-        rhythm.UpdateRhythm(timeProgress);
-    }
-
-
-    void HandleInput()
-    {
-        if (Input.GetKeyDown(inputKey))
-        {
-            bool hit = rhythm.CheckHit();
-
-            emotion.ApplyResult(hit);
-            score.RecordResult(hit);
-
-            // ⭐ เด้งตัวละคร
-            BounceCharacter(playerCharacter);
-            BounceCharacter(bossCharacter);
-
-            float timeProgress = 1f - (currentTime / gameDuration);
-            rhythm.ApplyDifficultyStep(timeProgress);
-        }
-    }
-    void EndGame()
-    {
-        if (isGameOver) return;
-        isGameOver = true;
-        emotion.FreezeEmotion();
-        float finalEmotion =
-            emotion.GetCurrentEmotionValue(); // slider.value
-
-        int resultIndex =
-            score.EvaluateResultIndex(finalEmotion);
-
-        string sceneName =
-            SceneManager.GetActiveScene().name;
-
-        ProgressManager.Instance
-            .SaveSceneResult(sceneName, resultIndex);
-
-        endGameUI.ShowResult(resultIndex);
-    }
-
-    void GameOverByEmotion()
-    {
-        if (isGameOver) return;
-
-        isGameOver = true;
-        currentTime = 0;
-
-      
-        emotion.FreezeEmotion();
-
-        float finalEmotionValue =
-            emotion.GetCurrentEmotionValue();
-
-        int resultIndex =
-            score.EvaluateResultIndex(finalEmotionValue);
-
-        endGameUI.ShowResult(resultIndex);
-    }
-    void UpdateMusicByEmotion()
-    {
-        //float finalEmotionValue =
-        //    emotion.GetCurrentEmotionValue();
-
-        //if (finalEmotionValue > 60f)
-        //    AudioManager.Instance.PlayCalm();
-        //else if (finalEmotionValue > 20f)
-        //    AudioManager.Instance.PlayMid();
-        //else
-        //    AudioManager.Instance.PlayChaos();
-    }
-
 }

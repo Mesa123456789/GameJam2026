@@ -16,7 +16,8 @@ public class CharacterEmotionVisual : MonoBehaviour
     public float bounceHeight = 30f;   // ⭐ UI ใช้ค่าเป็น pixel
     public float bounceTime = 0.2f;
 
-    private EmotionState currentState;
+    private EmotionState currentState = (EmotionState)(-1);
+
     private RectTransform rectTransform;
     private Vector2 basePos;
 
@@ -55,25 +56,4 @@ public class CharacterEmotionVisual : MonoBehaviour
 
     // ================= BOUNCE =================
 
-    public void Bounce()
-    {
-        LeanTween.cancel(gameObject);
-
-        rectTransform.anchoredPosition = basePos;
-
-        LeanTween.moveY(
-            rectTransform,
-            basePos.y + bounceHeight,
-            bounceTime * 0.5f
-        )
-        .setEaseOutQuad()
-        .setOnComplete(() =>
-        {
-            LeanTween.moveY(
-                rectTransform,
-                basePos.y,
-                bounceTime * 0.5f
-            ).setEaseInQuad();
-        });
-    }
 }

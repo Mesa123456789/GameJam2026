@@ -1,189 +1,172 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 
 public class RhythmBarController : MonoBehaviour
 {
-    [Header("UI")]
-    public RectTransform triangle;
-    public RectTransform bar;
-    public RectTransform redZone;
+    public enum EmotionType
+    {
+        Smile,    // 🙂 +10
+        Neutral,  // 😐 -10
+        Angry     // 😠 -15
+    }
 
-    [Header("Speed")]
-    public float baseSpeed = 220f;
-    public float speedMultiplier = 2.0f; 
+    [Header("Slots")]
+    public Image[] slotImages;          // ต้องมี 6 ช่อง
+    public Sprite smileSprite;
+    public Sprite neutralSprite;
+    public Sprite angrySprite;
 
-    [Header("Red Zone Width")]
-    public float baseZoneWidth = 160f;
-    public float minZoneWidth = 30f;
+    [Header("Indicator")]
+    public RectTransform indicator;
+    public float indicatorMoveSpeed = 6f; // index ต่อวินาที
 
-    [Header("Difficulty Curve")]
-    public AnimationCurve difficultyCurve;
+    [Header("Timing")]
+    public float speedMultiplier = 2f;
 
-    private float direction = 1f;
-    private float barHalfWidth;
+    private EmotionType[] emotionSlots;
+    private int currentIndex;
+    private float indexTimer;
 
-    [Header("Red Zone Spawn")]
-    public float minDistanceFromLast = 120f;
+    public int CurrentIndex => currentIndex;
+    public EmotionType CurrentEmotion => emotionSlots[currentIndex];
+    private bool isRunning = true;
 
-    private float lastRedZoneX;
-
-    [Header("Red Zone FX")]
-    public float hitPunchScale = 0.2f;
-    public float hitPunchTime = 0.15f;
-    [Header("Red Zone Shake")]
-    public float shakeAmount = 15f;
-    public float shakeTime = 0.1f;
-    [Header("Hit Rotation Shake")]
-    public float hitShakeAngle = 10f;     // ±10 องศา
-    public float hitShakeDuration = 0.12f;
-    [Header("Sound")]
-    public AudioSource rhythmAudio;
-    public AudioClip hitClip;
-    public AudioClip missClip;
     void Start()
     {
-        barHalfWidth = bar.rect.width / 2f;
-        RelocateRedZone();
-
-        if (rhythmAudio == null)
-            rhythmAudio = GetComponent<AudioSource>();
+        emotionSlots = new EmotionType[slotImages.Length];
+        RandomizeSlots();
+        MoveIndicatorInstant();
     }
 
-
-
-    void MoveTriangle(float speed)
+    void Update()
     {
-        Vector2 pos = triangle.anchoredPosition;
-        pos.x += direction * speed * Time.deltaTime;
-        triangle.anchoredPosition = pos;
+        if (!isRunning) return;
 
-        if (Mathf.Abs(pos.x) >= barHalfWidth)
+        UpdateIndicator();
+    }
+
+    // 🔁 ตัวชี้วิ่งวน index
+    void UpdateIndicator()
+    {
+        indexTimer += Time.deltaTime * indicatorMoveSpeed;
+
+        int newIndex = Mathf.FloorToInt(indexTimer) % slotImages.Length;
+
+        if (newIndex != currentIndex)
         {
-            direction *= -1f;
+            currentIndex = newIndex;
+            MoveIndicatorInstant();
         }
     }
-    void PlayRedZoneHitFX()
+
+    void MoveIndicatorInstant()
     {
-        LeanTween.cancel(redZone.gameObject);
+        Vector3 slotPos =
+            slotImages[currentIndex].rectTransform.position;
 
-        redZone.localScale = Vector3.one;
-
-        LeanTween
-            .scale(redZone, Vector3.one * (1f + hitPunchScale), hitPunchTime)
-            .setEasePunch();
+        indicator.position =
+            new Vector3(
+                slotPos.x,
+                slotPos.y + -40f,
+                slotPos.z
+            );
     }
-    void PlayHitRotationShake()
+
+    public void RandomizeSlots()
     {
-        // ยกเลิก tween เดิมกันซ้อน
-        LeanTween.cancel(redZone.gameObject);
-        LeanTween.cancel(bar.gameObject);
+        for (int i = 0; i < slotImages.Length; i++)
+        {
+            EmotionType randomEmotion =
+                (EmotionType)Random.Range(0, 3);
 
-        // รีเซ็ต rotation ก่อน
-        redZone.localRotation = Quaternion.identity;
-        bar.localRotation = Quaternion.identity;
+            emotionSlots[i] = randomEmotion;
+            slotImages[i].sprite = GetSprite(randomEmotion);
+        }
+    }
 
-        // 🔴 Red Zone
+    Sprite GetSprite(EmotionType type)
+    {
+        switch (type)
+        {
+            case EmotionType.Smile:
+                return smileSprite;
+            case EmotionType.Neutral:
+                return neutralSprite;
+            case EmotionType.Angry:
+                return angrySprite;
+        }
+        return null;
+    }
+
+    // 📤 ให้ GameManager มาเรียก
+    public EmotionType GetCurrentEmotion()
+    {
+        return emotionSlots[currentIndex];
+    }
+
+    public int GetCurrentIndex()
+    {
+        return currentIndex;
+    }
+
+    // 🎚 เรียกจาก GameManager เพื่อเร่งความเร็วตามเวลา
+    public void UpdateSpeedByTime(float timeProgress01)
+    {
+        indicatorMoveSpeed =
+            Mathf.Lerp(6f, 12f, timeProgress01 * speedMultiplier);
+    }
+    public void PlayHitFeedback()
+    {
+        // Indicator punch scale
+        LeanTween.cancel(indicator.gameObject);
+        indicator.localScale = Vector3.one;
+
+        LeanTween.scale(
+            indicator,
+            Vector3.one * 1.25f,
+            0.15f
+        ).setEasePunch();
+
+        // Slot pulse
+        RectTransform slot =
+            slotImages[currentIndex].rectTransform;
+
+        LeanTween.cancel(slot.gameObject);
+        slot.localScale = Vector3.one;
+
+        LeanTween.scale(
+            slot,
+            Vector3.one * 1.15f,
+            0.15f
+        ).setEasePunch();
+    }
+    public void PlayMissFeedback()
+    {
+        // Indicator shake
+        LeanTween.cancel(indicator.gameObject);
+        indicator.localRotation = Quaternion.identity;
+
         LeanTween.rotateZ(
-            redZone.gameObject,
-            hitShakeAngle,
-            hitShakeDuration / 2f
-        )
-        .setEaseInOutSine()
-        .setLoopPingPong(1);
+            indicator.gameObject,
+            12f,
+            0.08f
+        ).setEaseShake()
+         .setLoopPingPong(1);
 
-        // ⚪ BG
-        LeanTween.rotateZ(
-            bar.gameObject,
-            hitShakeAngle,
-            hitShakeDuration / 2f
-        )
-        .setEaseInOutSine()
-        .setLoopPingPong(1);
+        // Slot shake + shrink
+        RectTransform slot =
+            slotImages[currentIndex].rectTransform;
+
+        LeanTween.cancel(slot.gameObject);
+        slot.localScale = Vector3.one;
+
+        LeanTween.scale(
+            slot,
+            Vector3.one * 0.9f,
+            0.12f
+        ).setEaseOutBack()
+         .setLoopPingPong(1);
     }
 
-    void ShakeAndRelocateRedZone()
-    {
-        LeanTween.cancel(redZone.gameObject);
-
-        Vector3 originalPos = redZone.anchoredPosition;
-
-        // 1️⃣ สั่นก่อน
-        LeanTween
-            .moveX(redZone, originalPos.x + shakeAmount, shakeTime / 2f)
-            .setEase(LeanTweenType.easeShake)
-            .setOnComplete(() =>
-            {
-                redZone.anchoredPosition = originalPos;
-
-                // 2️⃣ ค่อยย้ายตำแหน่งจริง
-                RelocateRedZone();
-            });
-    }
-
-    public bool CheckHit()
-    {
-        float triX = triangle.anchoredPosition.x;
-        float zoneX = redZone.anchoredPosition.x;
-        float halfWidth = redZone.rect.width / 2f;
-
-        bool hit = Mathf.Abs(triX - zoneX) <= halfWidth;
-
-        // 🔊 เล่นเสียงทุกครั้งที่กด
-        if (rhythmAudio != null)
-        {
-            if (hit && hitClip != null)
-                rhythmAudio.PlayOneShot(hitClip);
-            else if (!hit && missClip != null)
-                rhythmAudio.PlayOneShot(missClip);
-        }
-
-        if (hit)
-        {
-            PlayRedZoneHitFX();
-            PlayHitRotationShake();
-        }
-
-        ShakeAndRelocateRedZone();
-
-        return hit;
-    }
-
-
-    public void UpdateRhythm(float timeProgress01)
-    {
-        float diff = difficultyCurve.Evaluate(timeProgress01);
-
-        float speed = baseSpeed + (baseSpeed * speedMultiplier * diff);
-        MoveTriangle(speed);
-    }
-    public void ApplyDifficultyStep(float timeProgress01)
-    {
-        float diff = difficultyCurve.Evaluate(timeProgress01);
-
-        float zoneWidth = Mathf.Lerp(baseZoneWidth, minZoneWidth, diff);
-
-        redZone.SetSizeWithCurrentAnchors(
-            RectTransform.Axis.Horizontal,
-            zoneWidth
-        );
-    }
-
-    void RelocateRedZone()
-    {
-        float range = barHalfWidth * 0.8f;
-        float newX;
-        int safety = 0;
-
-        do
-        {
-            newX = Random.Range(-range, range);
-            safety++;
-        }
-        while (Mathf.Abs(newX - lastRedZoneX) < minDistanceFromLast && safety < 20);
-
-        lastRedZoneX = newX;
-
-        redZone.anchoredPosition =
-            new Vector2(newX, redZone.anchoredPosition.y);
-    }
-
+    public void StopRhythm() { isRunning = false; }
 }
