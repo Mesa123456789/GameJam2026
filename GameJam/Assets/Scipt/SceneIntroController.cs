@@ -31,13 +31,10 @@ public class SceneIntroController : MonoBehaviour
         fadeImage.gameObject.SetActive(true);
         typingText.gameObject.SetActive(true);
         typingText.text = "";
-        StartCoroutine(TypeText(introText));
-        // เริ่มเฟด (ไม่รอ)
+
+        // ⭐ เฟด + พิมพ์ พร้อมกัน
         StartCoroutine(Fade(1f, 0f));
-
-        // พิมพ์ข้อความไปพร้อมกับเฟด
         yield return StartCoroutine(TypeText(introText));
-
 
         // ค้างให้อ่าน
         yield return new WaitForSecondsRealtime(holdAfterTyping);
@@ -49,6 +46,7 @@ public class SceneIntroController : MonoBehaviour
         Time.timeScale = 1f;
         fadeImage.gameObject.SetActive(false);
     }
+
 
     IEnumerator Fade(float from, float to)
     {

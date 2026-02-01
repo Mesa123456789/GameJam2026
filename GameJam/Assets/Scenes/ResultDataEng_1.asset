@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1aa26da83578c324a9e296835127b025, type: 3}
+  m_Name: ResultDataEng_1
+  m_EditorClassIdentifier: Assembly-CSharp::ResultDataSO
+  results:
+  - resultName: 'The Final Straw '
+    description: If you want this many changes, just do it yourself. My face says
+      it all, and my next stop is packing my desk.
+    starCount: 1
+  - resultName: 'The Silent Scream '
+    description: "I\u2019m biting my tongue with ten billion things to say. If only
+      the boss would calm down and actually listen for once."
+    starCount: 2
+  - resultName: 'You never really know someone '
+    description: Calm face masks a boiling rage. Don't let there be a second time.
+    starCount: 3

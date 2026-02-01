@@ -123,8 +123,8 @@ public class RhythmBarController : MonoBehaviour
 
         LeanTween.scale(
             indicator,
-            Vector3.one * 1.25f,
-            0.15f
+            Vector3.one * 1.5f,
+            0.1f
         ).setEasePunch();
 
         // Slot pulse
@@ -136,8 +136,8 @@ public class RhythmBarController : MonoBehaviour
 
         LeanTween.scale(
             slot,
-            Vector3.one * 1.15f,
-            0.15f
+            Vector3.one * 1.5f,
+            0.1f
         ).setEasePunch();
     }
     public void PlayMissFeedback()

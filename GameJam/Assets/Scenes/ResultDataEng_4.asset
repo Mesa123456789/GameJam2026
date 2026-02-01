@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1aa26da83578c324a9e296835127b025, type: 3}
+  m_Name: ResultDataEng_4
+  m_EditorClassIdentifier: Assembly-CSharp::ResultDataSO
+  results:
+  - resultName: 'Birthday but with me  '
+    description: "I\u2019m out! Speed 1000%."
+    starCount: 1
+  - resultName: 'Calm face, chaotic mind.  '
+    description: My eyes are darting, and my poker face is cracking. I think I'm
+      about to get caught... maybe?
+    starCount: 2
+  - resultName: "If I can\u2019t see you, you can\u2019t see me  "
+    description: "There\u2019s only me in this room. If something moves, no it didn't."
+    starCount: 3

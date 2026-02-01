@@ -8,22 +8,22 @@ public class EmotionAudioController : MonoBehaviour
     public AudioSource audioSource;
 
     [Header("Emotion Clips")]
-    public AudioClip lowClip;   // 😠 โกรธ
-    public AudioClip midClip;   // 😐 กลาง
-    public AudioClip highClip;  // 🙂 ดี
+    public AudioClip lowClip;   
+    public AudioClip midClip;  
+    public AudioClip highClip;
 
     [Header("Fade Settings")]
     public float fadeTime = 0.4f;
 
-    EmotionState currentState;
+    EmotionState currentState = (EmotionState)(-1);
 
+    Coroutine currentRoutine;
     void OnEnable()
     {
         if (emotionMeter == null) return;
 
         emotionMeter.OnEmotionStateChanged += OnEmotionChanged;
 
-        // ⭐ sync ตอนเริ่ม
         OnEmotionChanged(emotionMeter.CurrentState);
     }
 
@@ -42,8 +42,18 @@ public class EmotionAudioController : MonoBehaviour
         AudioClip targetClip = GetClipByState(state);
         if (targetClip == null) return;
 
-        StopAllCoroutines();
-        StartCoroutine(FadeTo(targetClip));
+        if (currentRoutine != null)
+            StopCoroutine(currentRoutine);
+
+        currentRoutine = StartCoroutine(FadeTo(targetClip));
+    }
+
+    public void StopEmotionAudio()
+    {
+        if (currentRoutine != null)
+            StopCoroutine(currentRoutine);
+
+        currentRoutine = StartCoroutine(FadeOutAndStop());
     }
 
     AudioClip GetClipByState(EmotionState state)
@@ -86,11 +96,7 @@ public class EmotionAudioController : MonoBehaviour
 
         audioSource.volume = 1f;
     }
-    public void StopEmotionAudio()
-    {
-        StopAllCoroutines();
-        StartCoroutine(FadeOutAndStop());
-    }
+
 
     System.Collections.IEnumerator FadeOutAndStop()
     {

@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1aa26da83578c324a9e296835127b025, type: 3}
+  m_Name: ResultDataEng_5
+  m_EditorClassIdentifier: Assembly-CSharp::ResultDataSO
+  results:
+  - resultName: 'Can''t stop smiling! '
+    description: Busted! I tried to play it cool, but the camera doesn't lie. That
+      'familiar face' is definitely my Boss. Help!
+    starCount: 1
+  - resultName: 'The Unstoppable Smirk '
+    description: "My 'shipping' heart is full. I\u2019m grinning like an idiot because
+      they are just too sweet together."
+    starCount: 2
+  - resultName: 'Acting like a pro '
+    description: Covering my face to stay cool. I wasn't trying to look, but my eyes
+      are being sneaky.
+    starCount: 3

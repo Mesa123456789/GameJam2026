@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1aa26da83578c324a9e296835127b025, type: 3}
+  m_Name: ResultDataEng_3
+  m_EditorClassIdentifier: Assembly-CSharp::ResultDataSO
+  results:
+  - resultName: 'No one better than...  '
+    description: "I can barely hide my annoyance. If bragging about her kids were
+      an Olympic sport, she\u2019d take home the gold. "
+    starCount: 1
+  - resultName: No funds, Just questions
+    description: "It\u2019s exhausting. She grills me about everything from my school
+      days to my job. I just have to grin and bear it."
+    starCount: 2
+  - resultName: "We listen we don\u2019t judge  "
+    description: "She means well, but she\u2019s a bit of a chatterbox."
+    starCount: 3

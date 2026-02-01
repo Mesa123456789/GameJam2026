@@ -26,19 +26,44 @@ public class GameManager : MonoBehaviour
     private float currentTime;
     private bool isGameOver;
     int roundCount;
+    [Header("Idle Penalty")]
+    public float idleLimit = 2.0f;      // ไม่กดเกินกี่วินาที
+    public int idlePenalty = -5;        // โดนหักกี่คะแนน
+
+    float idleTimer;
+    Vector2 playerBasePos;
+    Vector2 bossBasePos;
+    bool basePosInitialized;
 
     [Header("Input Sound")]
     public AudioSource inputAudio;
     public AudioClip hitClip;    // เสียงกดดี (Smile)
     public AudioClip missClip;   // เสียงกดพลาด (Neutral / Angry)
     public EmotionAudioController emotionAudio;
+    float lastInputSoundTime;
+    public float inputSoundCooldown = 0.05f;
+    [Header("Idle Warning Shake")]
+    public RectTransform warningTarget;   // เช่น indicator
+    public float warningShakeAmount = 12f;
+    public float warningShakeTime = 0.15f;
 
+    bool hasPlayedIdleWarning;
+
+    void PlayInputSound(RhythmBarController.EmotionType emotion)
+    {
+        if (inputAudio == null) return;
+        if (Time.time - lastInputSoundTime < inputSoundCooldown) return;
+
+        lastInputSoundTime = Time.time;
+
+        if (emotion == RhythmBarController.EmotionType.Smile)
+            inputAudio.PlayOneShot(hitClip);
+        else
+            inputAudio.PlayOneShot(missClip);
+    }
     void Start()
     {
         Cursor.visible = false;
-        //Time.timeScale = 1f;
-
-        // ✅ เก็บ AudioManager
         AudioManager.Instance.ApplyAll();
 
         currentTime = gameDuration;
@@ -46,7 +71,17 @@ public class GameManager : MonoBehaviour
 
         if (score != null)
             score.ResetScore();
+
+        // ⭐ เก็บตำแหน่งฐาน
+        if (playerCharacter != null)
+            playerBasePos = playerCharacter.anchoredPosition;
+
+        if (bossCharacter != null)
+            bossBasePos = bossCharacter.anchoredPosition;
+
+        basePosInitialized = true;
     }
+
 
     void Update()
     {
@@ -54,6 +89,7 @@ public class GameManager : MonoBehaviour
 
         UpdateTimer();
         UpdateDifficultyByTime();
+        UpdateIdlePenalty();   // ⭐ เพิ่มตรงนี้
         HandleInput();
     }
 
@@ -84,6 +120,8 @@ public class GameManager : MonoBehaviour
     void HandleInput()
     {
         if (!Input.GetKeyDown(inputKey)) return;
+        idleTimer = 0f;
+        hasPlayedIdleWarning = false; // ⭐ รีเซ็ตเตือน
 
         roundCount++;
 
@@ -123,23 +161,50 @@ public class GameManager : MonoBehaviour
         BounceCharacter(bossCharacter);
     }
 
-    void PlayInputSound(RhythmBarController.EmotionType emotion)
+    void UpdateIdlePenalty()
     {
-        if (inputAudio == null) return;
+        idleTimer += Time.deltaTime;
 
-        switch (emotion)
+        // ⚠️ เตือนก่อนโดนหัก
+        if (!hasPlayedIdleWarning && idleTimer > idleLimit * 0.8f)
         {
-            case RhythmBarController.EmotionType.Smile:
-                if (hitClip != null)
-                    inputAudio.PlayOneShot(hitClip);
-                break;
-
-            case RhythmBarController.EmotionType.Neutral:
-            case RhythmBarController.EmotionType.Angry:
-                if (missClip != null)
-                    inputAudio.PlayOneShot(missClip);
-                break;
+            hasPlayedIdleWarning = true;
+            PlayIdleWarningShake();
         }
+
+        // 🔻 โดนหักคะแนนจริง
+        if (idleTimer >= idleLimit)
+        {
+            idleTimer = 0f;
+            hasPlayedIdleWarning = false;
+
+            score.AddScore(idlePenalty);
+
+            Debug.Log("[IDLE] No input too long → penalty");
+
+            rhythm.PlayMissFeedback();
+        }
+    }
+
+    void PlayIdleWarningShake()
+    {
+        if (warningTarget == null) return;
+
+        LeanTween.cancel(warningTarget.gameObject);
+
+        Vector3 basePos = warningTarget.localPosition;
+
+        LeanTween.moveLocalX(
+            warningTarget.gameObject,
+            basePos.x + warningShakeAmount,
+            warningShakeTime * 0.5f
+        )
+        .setEaseShake()
+        .setLoopPingPong(1)
+        .setOnComplete(() =>
+        {
+            warningTarget.localPosition = basePos;
+        });
     }
 
     int GetScoreFromEmotion(RhythmBarController.EmotionType emotion)
@@ -176,14 +241,15 @@ public class GameManager : MonoBehaviour
 
         endGameUI.ShowResult(resultIndex);
     }
-
     void BounceCharacter(RectTransform target)
     {
-        if (target == null) return;
+        if (target == null || !basePosInitialized) return;
+
+        Vector2 basePos =
+            (target == playerCharacter) ? playerBasePos : bossBasePos;
 
         LeanTween.cancel(target.gameObject);
-
-        Vector2 basePos = target.anchoredPosition;
+        target.anchoredPosition = basePos; // ⭐ รีเซ็ตก่อนเด้งเสมอ
 
         LeanTween.moveY(
             target,
@@ -203,4 +269,5 @@ public class GameManager : MonoBehaviour
             .setIgnoreTimeScale(true);
         });
     }
+
 }

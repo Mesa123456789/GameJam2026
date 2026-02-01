@@ -7,7 +7,7 @@ public class SceneEmotionCharacterController : MonoBehaviour
 
     public CharacterEmotionVisual leftCharacter;
     public CharacterEmotionVisual rightCharacter;
-    public CharacterEmotionVisual rightCharacter1;
+
     void OnEnable()
     {
         if (emotionMeter == null) return;
@@ -28,6 +28,5 @@ public class SceneEmotionCharacterController : MonoBehaviour
     {
         leftCharacter.SetEmotionState(state);
         rightCharacter.SetEmotionState(state);
-        rightCharacter1.SetEmotionState(state);
     }
 }
