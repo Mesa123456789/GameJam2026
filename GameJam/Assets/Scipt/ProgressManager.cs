@@ -24,17 +24,9 @@ public class ProgressManager : MonoBehaviour
 
     public void SaveSceneResult(string sceneName, int resultIndex)
     {
-        if (sceneResults.ContainsKey(sceneName))
-        {
- 
-            sceneResults[sceneName] =
-                Mathf.Max(sceneResults[sceneName], resultIndex);
-        }
-        else
-        {
-            sceneResults.Add(sceneName, resultIndex);
-        }
+        sceneResults[sceneName] = resultIndex;
     }
+
 
     public bool TryGetSceneResult(string sceneName, out int resultIndex)
     {

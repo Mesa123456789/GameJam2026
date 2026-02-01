@@ -67,7 +67,7 @@ public class RhythmBarController : MonoBehaviour
         indicator.position =
             new Vector3(
                 slotPos.x,
-                slotPos.y + -40f,
+                slotPos.y + -60f,
                 slotPos.z
             );
     }
