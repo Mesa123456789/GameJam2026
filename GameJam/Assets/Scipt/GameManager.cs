@@ -1,6 +1,7 @@
 ﻿using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 
 public class GameManager : MonoBehaviour
 {
@@ -92,6 +93,51 @@ public class GameManager : MonoBehaviour
         UpdateIdlePenalty();   // ⭐ เพิ่มตรงนี้
         HandleInput();
     }
+    void HandleInput()
+    {
+        bool isPressed = false;
+
+        // 🎮 Keyboard
+        if (Input.GetKeyDown(inputKey))
+            isPressed = true;
+
+        // 🖱 Mouse (ใช้ใน Editor / Simulator)
+        if (Input.GetMouseButtonDown(0))
+            isPressed = true;
+
+        // 📱 Touch (มือถือจริง)
+        if (Input.touchCount > 0 &&
+            Input.GetTouch(0).phase == TouchPhase.Began)
+            isPressed = true;
+
+        if (!isPressed) return;
+
+        // ========= ของเดิม =========
+
+        idleTimer = 0f;
+        hasPlayedIdleWarning = false;
+
+        roundCount++;
+
+        int index = rhythm.GetCurrentIndex();
+        var emotion = rhythm.GetCurrentEmotion();
+
+        if (emotion == RhythmBarController.EmotionType.Smile)
+            rhythm.PlayHitFeedback();
+        else
+            rhythm.PlayMissFeedback();
+
+        int scoreDelta = GetScoreFromEmotion(emotion);
+        PlayInputSound(emotion);
+        score.AddScore(scoreDelta);
+
+        emotionMeter.IncreaseSpeedByRound(roundCount);
+        rhythm.RandomizeSlots();
+
+        BounceCharacter(playerCharacter);
+        BounceCharacter(bossCharacter);
+    }
+
 
     // ⏱ เวลาเกม
     void UpdateTimer()
@@ -117,49 +163,50 @@ public class GameManager : MonoBehaviour
         float timeProgress = 1f - (currentTime / gameDuration);
         rhythm.UpdateSpeedByTime(timeProgress);
     }
-    void HandleInput()
-    {
-        if (!Input.GetKeyDown(inputKey)) return;
-        idleTimer = 0f;
-        hasPlayedIdleWarning = false; // ⭐ รีเซ็ตเตือน
+    //void HandleInput()
+    //{
+    //    if (!IsInputTriggered()) return;
 
-        roundCount++;
+    //    idleTimer = 0f;
+    //    hasPlayedIdleWarning = false; // ⭐ รีเซ็ตเตือน
 
-        int index = rhythm.GetCurrentIndex();
-        RhythmBarController.EmotionType emotion =
-            rhythm.GetCurrentEmotion();
-        // หลังจากรู้ emotion แล้ว
-        if (emotion == RhythmBarController.EmotionType.Smile)
-        {
-            rhythm.PlayHitFeedback();   // 🟢 กดโดน
-        }
-        else
-        {
-            rhythm.PlayMissFeedback();  // 🔴 กดพลาด
-        }
+    //    roundCount++;
 
-        int scoreDelta = GetScoreFromEmotion(emotion);
+    //    int index = rhythm.GetCurrentIndex();
+    //    RhythmBarController.EmotionType emotion =
+    //        rhythm.GetCurrentEmotion();
+    //    // หลังจากรู้ emotion แล้ว
+    //    if (emotion == RhythmBarController.EmotionType.Smile)
+    //    {
+    //        rhythm.PlayHitFeedback();   // 🟢 กดโดน
+    //    }
+    //    else
+    //    {
+    //        rhythm.PlayMissFeedback();  // 🔴 กดพลาด
+    //    }
 
-        Debug.Log(
-            $"[INPUT] Slot:{index} | Emotion:{emotion} | Delta:{scoreDelta}"
-        );
+    //    int scoreDelta = GetScoreFromEmotion(emotion);
 
-        // 🔊 เล่นเสียงตามผลลัพธ์การกด
-        PlayInputSound(emotion);
+    //    Debug.Log(
+    //        $"[INPUT] Slot:{index} | Emotion:{emotion} | Delta:{scoreDelta}"
+    //    );
 
-        score.AddScore(scoreDelta);
+    //    // 🔊 เล่นเสียงตามผลลัพธ์การกด
+    //    PlayInputSound(emotion);
 
-        Debug.Log(
-            $"[SCORE] TotalScore = {score.TotalScore}"
-        );
+    //    score.AddScore(scoreDelta);
 
-        emotionMeter.IncreaseSpeedByRound(roundCount);
+    //    Debug.Log(
+    //        $"[SCORE] TotalScore = {score.TotalScore}"
+    //    );
 
-        rhythm.RandomizeSlots();
+    //    emotionMeter.IncreaseSpeedByRound(roundCount);
 
-        BounceCharacter(playerCharacter);
-        BounceCharacter(bossCharacter);
-    }
+    //    rhythm.RandomizeSlots();
+
+    //    BounceCharacter(playerCharacter);
+    //    BounceCharacter(bossCharacter);
+   // }
 
     void UpdateIdlePenalty()
     {
